@@ -97,7 +97,7 @@ In the **Trust** section there are three placeholder testimonials. Replace with 
 
 ### 4. Set the parent contact email
 
-Footer currently has `parent@example.com`. Swap to a real address.
+Footer uses `info@cabbagetownoddjobs.com`.
 
 ### 5. Set the Instagram link
 
