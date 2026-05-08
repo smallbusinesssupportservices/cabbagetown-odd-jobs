@@ -6,26 +6,32 @@ Single-page marketing site for the teen-run odd-jobs crew in Cabbagetown, Atlant
 
 ```
 .
-├── index.html                  # the whole page — 11 sections in order
-├── css/styles.css              # design tokens + section styles (token block at top of file)
-├── js/main.js                  # mobile nav toggle, footer year, service-card prefill, form submit
-├── images/                     # production images (used by index.html)
-│   ├── mascot.png              # hero image — orbit composite (mascot + 6 service icons + tagline)
-│   ├── mascot-icon.png         # small standalone cabbage — header logo + favicon
-│   ├── service-*.png           # 6 service icons
-│   ├── before-after/           # add real before/after photos here (see TODO list below)
-│   └── archive/                # unused art, kept for reference
-└── assests/                    # ORIGINAL ChatGPT images. Safe to leave; not used by the site.
+├── README.md                   # repo docs (not deployed)
+├── .gitignore
+├── .env                        # local config (gitignored, not deployed)
+├── public_html/                # the deployable site — exactly mirrors Hostinger's public_html/
+│   ├── index.html              # the whole page — 11 sections in order
+│   ├── css/styles.css          # design tokens + section styles (token block at top of file)
+│   ├── js/main.js              # mobile nav toggle, footer year, service-card prefill, form submit
+│   └── images/                 # production images used by index.html
+│       ├── mascot-icon.png     # small standalone cabbage — header logo + favicon
+│       ├── service-*.png       # service icons
+│       ├── before-after/       # add real before/after photos here (see TODO list below)
+│       └── archive/            # unused art, kept for reference
+└── assests/                    # ORIGINAL ChatGPT images. Reference only; not deployed.
 ```
+
+Anything inside `public_html/` is what goes live. Everything else stays local.
 
 ## Local preview
 
 ```sh
+cd public_html
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-Or just double-click `index.html` — it works as a `file://` URL too.
+Or just double-click `public_html/index.html` — it works as a `file://` URL too.
 
 ## Pre-launch TODOs
 
@@ -70,18 +76,18 @@ The "Request a quote" form posts to a Google Apps Script Web App that appends a 
    ```
 
 4. **Deploy as a Web App.** `Deploy → New deployment → Type: Web app`. Settings: **Execute as: Me**, **Who has access: Anyone**. Click Deploy and authorize when prompted. Copy the resulting Web App URL.
-5. **Wire it into the site.** Open `js/main.js` and paste the Web App URL into `var APPS_SCRIPT_URL = ""`.
+5. **Wire it into the site.** Open `public_html/js/main.js` and paste the Web App URL into `var APPS_SCRIPT_URL = ""`.
 6. **Test.** Submit the form once on the live site. A new row should appear in the Sheet, and any attached photo should land in the Drive folder with a clickable link in the row's *Images* column.
 
 ### 2. Add real before/after photos
 
-The gallery currently shows placeholder boxes. Add 6 photos to `images/before-after/`:
+The gallery currently shows placeholder boxes. Add 6 photos to `public_html/images/before-after/`:
 
 - `driveway-before.jpg` / `driveway-after.jpg`
 - `leaves-before.jpg` / `leaves-after.jpg`
 - `lawn-before.jpg` / `lawn-after.jpg`
 
-Then, in `index.html`, replace each `<div class="ba-placeholder">…</div>` with `<img src="images/before-after/driveway-before.jpg" alt="Driveway covered in dirt before pressure washing" />` (and similar). Keep the `<figcaption>` lines as-is.
+Then, in `public_html/index.html`, replace each `<div class="ba-placeholder">…</div>` with `<img src="images/before-after/driveway-before.jpg" alt="Driveway covered in dirt before pressure washing" />` (and similar). Keep the `<figcaption>` lines as-is.
 
 Aim for ~1500px wide, JPEG, under 300 KB each.
 
@@ -99,21 +105,24 @@ Footer has `https://instagram.com/` as a placeholder. Swap to the real handle UR
 
 ## Deploying to Hostinger
 
-The site is static — three files (`index.html`, `css/`, `js/`) plus the `images/` folder. The `assests/` folder doesn't need to be uploaded.
+Everything that goes live is in `public_html/`. Nothing else in the repo gets deployed.
 
-Two ways to upload:
+### Option A — rsync over SSH (recommended)
 
-### Option A — Hostinger File Manager (easiest)
+We have a `cabbage` SSH alias configured in `~/.ssh/config`. One command syncs the local `public_html/` to Hostinger's `public_html/`:
+
+```sh
+rsync -avz --delete --exclude='.DS_Store' public_html/ cabbage:public_html/
+```
+
+The trailing slash on `public_html/` matters — it copies *contents*, not the folder itself. `--delete` keeps Hostinger in sync (removes anything on the server that's no longer in the local `public_html/`). The `--exclude` keeps macOS junk files out. Add `-n` to do a dry run first.
+
+### Option B — Hostinger File Manager (no terminal needed)
 1. Log into Hostinger → **Files → File Manager**.
 2. Navigate to `public_html/`.
 3. Delete the existing files (back them up first if you want).
-4. Drag-and-drop the contents of this folder **except** `assests/`, `README.md`, and `.git/` if present.
+4. Drag-and-drop the **contents** of your local `public_html/` folder.
 5. Hard-refresh the live site (⌘+Shift+R / Ctrl+Shift+R) to bust the browser cache.
-
-### Option B — FTP (faster for repeat updates)
-1. In Hostinger → **Files → FTP Accounts**, copy your FTP host / username / password.
-2. Connect with FileZilla or Cyberduck.
-3. Upload the same files into `/public_html/`.
 
 ### Domain notes
 The current domain `cabbagetownoddjobs.com` should already be pointed at Hostinger. After upload, the live site replaces the Squarespace placeholder. If DNS is still pointing at Squarespace, update nameservers in your domain registrar to Hostinger's (`ns1.dns-parking.com`, `ns2.dns-parking.com` or whatever Hostinger gave you).
@@ -130,5 +139,5 @@ Modern evergreen browsers (Chrome, Safari, Firefox, Edge — last 2 versions). N
 
 - Vanilla HTML / CSS / JS. No build step.
 - Google Fonts: Poppins (headings), Inter (body) — loaded via `<link>` with `preconnect` for fast first paint.
-- CSS uses custom properties for design tokens. Edit them at the top of `css/styles.css` if the brand changes.
-- Form submissions go to a Google Apps Script Web App (URL configured in `js/main.js`). Photos are base64-encoded client-side and decoded into Drive files by the script. A hidden honeypot field guards against most bot spam.
+- CSS uses custom properties for design tokens. Edit them at the top of `public_html/css/styles.css` if the brand changes.
+- Form submissions go to a Google Apps Script Web App (URL configured in `public_html/js/main.js`). Photos are base64-encoded client-side and decoded into Drive files by the script. A hidden honeypot field guards against most bot spam.
