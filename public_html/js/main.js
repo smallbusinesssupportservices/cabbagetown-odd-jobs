@@ -78,7 +78,8 @@
   //   3. Sheet → Extensions → Apps Script → paste the script in README.md → fill DRIVE_FOLDER_ID.
   //   4. Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone.
   //   5. Paste the Web App URL into APPS_SCRIPT_URL below.
-  var APPS_SCRIPT_URL = ""; // TODO before launch: paste the deployed Apps Script Web App URL.
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDUjbrCKeQqT_KfTO5kLKzcKW1-e9JgaXOTEhqzmT8BsILZQZPBA1Jl1cLR8bXwhV_/exec";
+  var FORM_TOKEN = "cd0d650b74db564c0591139ec6eca16c5c0cb32f67c6d29bc1d8c23fce1e3154";
   var form = document.getElementById("quote-form");
   var statusEl = document.getElementById("qf-status");
 
@@ -117,6 +118,8 @@
 
       Promise.all(fileList.map(readFileAsBase64)).then(function (encoded) {
         var payload = {
+          token: FORM_TOKEN,
+          origin: location.origin,
           service: form.elements.service.value,
           name: form.elements.name.value,
           phone: form.elements.phone.value,
@@ -137,7 +140,10 @@
           body: JSON.stringify(payload)
         });
       }).then(function (res) {
-        if (!res || !res.ok) throw new Error("Bad response");
+        if (!res || !res.ok) throw new Error("Network error");
+        return res.json();
+      }).then(function (data) {
+        if (!data || !data.ok) throw new Error(data && data.error || "Bad response");
         form.reset();
         statusEl.className = "quote-form__status quote-form__status--ok";
         statusEl.textContent = "Got it! We'll get back to you with a quote shortly.";
